@@ -132,6 +132,27 @@ svg text{fill:var(--mu);font-size:10px;font-family:inherit}
 .step.pend i{background:var(--as);border-color:var(--a);color:var(--a)}
 .step small{font-size:10px;color:var(--mu);display:block}
 .mt-card{background:linear-gradient(135deg,#2a1f08 0%,#121821 65%)}
+.leg-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.leg-h .leg-n{margin:0}
+.leg-lost{display:none;font-size:12px;font-weight:700;padding:5px 12px;border-radius:99px;background:var(--rs);color:var(--r)}
+form[data-st=lost][data-combo="1"] .leg-lost{display:inline-block}
+form[data-st=lost] .leg.is-lost{border-color:var(--r)}
+.leg.is-lost .leg-lost{background:var(--r);color:#fff}
+.pick-wrap,.leg .ac{margin-top:8px}
+.pick .chips{gap:6px}
+.pick .chip{padding:8px 14px;font-weight:600}
+.ac{position:relative}
+.ac-list{display:none;position:absolute;left:0;right:0;top:100%;z-index:5;background:var(--card2);border:1px solid var(--line);border-radius:12px;margin-top:4px;max-height:230px;overflow-y:auto;box-shadow:0 12px 30px rgba(0,0,0,.55)}
+.ac-list button{display:block;width:100%;text-align:left;padding:11px 12px;border-bottom:1px solid var(--line);font-size:14px}
+.ac-list button:last-child{border-bottom:0}
+.ac-list button b{color:var(--g);font-weight:700}
+.rb{margin-bottom:11px}
+.rb-top{display:flex;justify-content:space-between;gap:8px;font-size:13px;margin-bottom:4px}
+.rb-top>span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rb-top>span:last-child{flex:none}
+.rb-bar{height:14px;background:var(--card2);border-radius:6px;overflow:hidden}
+.rb-bar i{display:block;height:100%;border-radius:6px}
+.sec-t{font-size:15px;font-weight:800;margin:22px 0 10px;letter-spacing:-.01em}
 .note{font-size:12px;color:var(--mu);line-height:1.5}
 @media(min-width:900px){.grid3.k6{grid-template-columns:repeat(6,1fr)}}
 </style>
@@ -163,6 +184,28 @@ const DEF_BOOKS=['Yonibet','Winamax','Betclic','Unibet','Parions Sport','PMU','Z
 const DEF_SPORTS=['Football','Tennis','Basket','Hockey','Rugby','MMA','eSport'];
 const MARKETS=['Résultat 1N2','Double chance','Plus/Moins buts','Les 2 marquent','Buteur','Handicap','Score exact','Mi-temps','Stats joueur','Vainqueur match'];
 const TYPES=['Simple','Combiné','Système'];
+const PICKS={
+  'Résultat 1N2':{o:['1','X','2']},
+  'Double chance':{o:['1X','12','X2']},
+  'Mi-temps':{o:['1','X','2']},
+  'Vainqueur match':{o:['1','2']},
+  'Les 2 marquent':{o:['Oui','Non']},
+  'Plus/Moins buts':{side:['Plus','Moins'],lines:['0.5','1.5','2.5','3.5','4.5','5.5','6.5']},
+  'Score exact':{f:'Ex : 2-1'},
+  'Buteur':{f:'Nom du joueur'},
+  'Handicap':{f:'Ex : Équipe 1 (-1)'},
+  'Stats joueur':{f:'Ex : +1.5 tirs cadrés'}
+};
+const COMP_INTL=['International – Match amical','Coupe du Monde','Coupe du Monde – Qualifications','Euro','Euro – Qualifications','Ligue des Nations','Copa América','Coupe d\'Afrique des Nations (CAN)','CAN – Qualifications','Coupe d\'Asie','Gold Cup (CONCACAF)','Jeux Olympiques','Coupe du Monde féminine','Euro féminin','Ligue des Champions','Ligue des Champions – Qualifications','Ligue Europa','Ligue Conférence','Supercoupe d\'Europe','Coupe du Monde des clubs','Ligue des Champions féminine','Copa Libertadores','Copa Sudamericana','Ligue des Champions CAF','Ligue des Champions AFC','Ligue des Champions CONCACAF','Match amical clubs','Youth League (UEFA)','Euro Espoirs (U21)','Coupe du Monde U20','Coupe du Monde U17'];
+const COMP_LEAGUES=['France – Ligue 1','France – Ligue 2','France – National','France – Coupe de France','France – Trophée des Champions','France – D1 Arkema (féminine)','Angleterre – Premier League','Angleterre – Championship','Angleterre – League One','Angleterre – League Two','Angleterre – FA Cup','Angleterre – League Cup (Carabao)','Angleterre – Community Shield','Espagne – LaLiga','Espagne – LaLiga 2','Espagne – Copa del Rey','Espagne – Supercoupe','Italie – Serie A','Italie – Serie B','Italie – Coppa Italia','Italie – Supercoupe','Allemagne – Bundesliga','Allemagne – 2. Bundesliga','Allemagne – 3. Liga','Allemagne – DFB Pokal','Portugal – Liga Portugal','Portugal – Liga 2','Portugal – Taça de Portugal','Pays-Bas – Eredivisie','Pays-Bas – Eerste Divisie','Pays-Bas – KNVB Beker','Belgique – Pro League','Belgique – Coupe de Belgique','Suisse – Super League','Autriche – Bundesliga','Écosse – Premiership','Turquie – Süper Lig','Grèce – Super League','Danemark – Superliga','Suède – Allsvenskan','Norvège – Eliteserien','Pologne – Ekstraklasa','Tchéquie – 1. Liga','Croatie – HNL','Serbie – SuperLiga','Ukraine – Premier League','Russie – Premier League','Roumanie – Liga 1','Hongrie – NB I','Irlande – Premier Division','Israël – Ligat Ha\'Al','Chypre – 1. Division','Arabie saoudite – Saudi Pro League','Qatar – Stars League','Émirats arabes unis – Pro League','Maroc – Botola Pro','Algérie – Ligue 1','Tunisie – Ligue 1','Égypte – Premier League','Afrique du Sud – Premiership','États-Unis – MLS','Mexique – Liga MX','Brésil – Série A','Brésil – Série B','Brésil – Copa do Brasil','Argentine – Liga Profesional','Chili – Primera División','Colombie – Primera A','Uruguay – Primera División','Japon – J1 League','Corée du Sud – K League 1','Chine – Super League','Australie – A-League',
+'Tennis – Open d\'Australie','Tennis – Roland-Garros','Tennis – Wimbledon','Tennis – US Open','Tennis – ATP Masters 1000','Tennis – ATP 500','Tennis – ATP 250','Tennis – ATP Finals','Tennis – WTA 1000','Tennis – WTA 500','Tennis – WTA 250','Tennis – Coupe Davis','Tennis – Challenger',
+'Basket – NBA','Basket – Euroligue','Basket – Eurocup','Basket – Betclic Élite (France)','Basket – Liga ACB (Espagne)','Basket – Coupe du Monde FIBA','Basket – EuroBasket','Basket – WNBA','Basket – NCAA',
+'Hockey – NHL','Hockey – KHL','Hockey – Ligue Magnus','Hockey – Championnat du Monde',
+'Rugby – Top 14','Rugby – Pro D2','Rugby – Champions Cup','Rugby – Challenge Cup','Rugby – Tournoi des Six Nations','Rugby – Coupe du Monde','Rugby – Rugby Championship','Rugby – Premiership','Rugby – United Rugby Championship','Rugby – Super Rugby',
+'MMA – UFC','MMA – PFL','MMA – ARES','Boxe','Handball – Starligue','Handball – Ligue des Champions','Handball – Championnat du Monde','Handball – Euro','Volley – Ligue A','Volley – Ligue des Nations','Football américain – NFL','Baseball – MLB','Formule 1','MotoGP','Cyclisme – Tour de France','Golf – PGA Tour','Fléchettes – PDC','Snooker','eSport – LoL','eSport – CS2','eSport – Valorant'];
+const COUNTRIES='Afghanistan|Afrique du Sud|Albanie|Algérie|Allemagne|Andorre|Angleterre|Angola|Antigua-et-Barbuda|Arabie saoudite|Argentine|Arménie|Australie|Autriche|Azerbaïdjan|Bahamas|Bahreïn|Bangladesh|Barbade|Belgique|Belize|Bénin|Bhoutan|Biélorussie|Birmanie|Bolivie|Bosnie-Herzégovine|Botswana|Brésil|Brunei|Bulgarie|Burkina Faso|Burundi|Cambodge|Cameroun|Canada|Cap-Vert|Chili|Chine|Chypre|Colombie|Comores|Congo|Corée du Nord|Corée du Sud|Costa Rica|Côte d\'Ivoire|Croatie|Cuba|Curaçao|Danemark|Djibouti|Dominique|Écosse|Égypte|Émirats arabes unis|Équateur|Érythrée|Espagne|Estonie|Eswatini|États-Unis|Éthiopie|Fidji|Finlande|France|Gabon|Gambie|Géorgie|Ghana|Gibraltar|Grèce|Grenade|Guatemala|Guinée|Guinée équatoriale|Guinée-Bissau|Guyana|Haïti|Honduras|Hong Kong|Hongrie|Îles Féroé|Inde|Indonésie|Irak|Iran|Irlande|Irlande du Nord|Islande|Israël|Italie|Jamaïque|Japon|Jordanie|Kazakhstan|Kenya|Kirghizistan|Kosovo|Koweït|Laos|Lesotho|Lettonie|Liban|Liberia|Libye|Liechtenstein|Lituanie|Luxembourg|Macédoine du Nord|Madagascar|Malaisie|Malawi|Maldives|Mali|Malte|Maroc|Maurice|Mauritanie|Mexique|Moldavie|Monaco|Mongolie|Monténégro|Mozambique|Namibie|Népal|Nicaragua|Niger|Nigeria|Norvège|Nouvelle-Calédonie|Nouvelle-Zélande|Oman|Ouganda|Ouzbékistan|Pakistan|Palestine|Panama|Papouasie-Nouvelle-Guinée|Paraguay|Pays de Galles|Pays-Bas|Pérou|Philippines|Pologne|Portugal|Porto Rico|Qatar|RD Congo|République centrafricaine|République dominicaine|Roumanie|Russie|Rwanda|Saint-Kitts-et-Nevis|Sainte-Lucie|Saint-Marin|Saint-Vincent-et-les-Grenadines|Salvador|Samoa|Sénégal|Serbie|Seychelles|Sierra Leone|Singapour|Slovaquie|Slovénie|Somalie|Soudan|Soudan du Sud|Sri Lanka|Suède|Suisse|Suriname|Syrie|Tadjikistan|Taïwan|Tanzanie|Tchad|Tchéquie|Thaïlande|Togo|Tonga|Trinité-et-Tobago|Tunisie|Turkménistan|Turquie|Ukraine|Uruguay|Vanuatu|Venezuela|Viêt Nam|Yémen|Zambie|Zimbabwe'.split('|');
+const COMPS=[...COMP_INTL,...COMP_LEAGUES,...COUNTRIES];
+const norm=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
 const STATUS={pending:'En cours',won:'Gagné',lost:'Perdu',void:'Remboursé',cashout:'Cash-out'};
 const ODDS_RANGES=[[1,1.5,'< 1.50'],[1.5,2,'1.50 – 1.99'],[2,3,'2.00 – 2.99'],[3,5,'3.00 – 4.99'],[5,9999,'5.00 +']];
 
@@ -252,8 +295,10 @@ function render(){
 function betRow(b,showDate){
   const p=profit(b);
   const legsN=b.legs&&b.legs.length?b.legs.length:0;
-  const title=b.label||(legsN?b.legs.map(l=>l.label||l.market).join(' + '):`${b.sport} · ${b.market}`);
-  const sub=[(b.label||legsN)?b.sport:null,b.type==='Combiné'?('Combiné'+(legsN?` ${legsN} sél.`:'')):(b.label?b.market:null),b.type==='Système'?'Système':null,showDate?fmtDate(b.date):null].filter(Boolean).join(' · ')||b.type;
+  const pk=b.pick?` : ${b.pick}`:'';
+  const nLost=legsN&&b.status==='lost'?b.legs.filter(l=>l.lost).length:0;
+  const title=b.label||(legsN?b.legs.map(l=>(l.label||l.market)+(l.pick?` (${l.pick})`:'')).join(' + '):`${b.market}${pk}`);
+  const sub=[b.sport,b.comp||null,b.type==='Combiné'?('Combiné'+(legsN?` ${legsN} sél.`:'')+(nLost?` · ${nLost} perdue${nLost>1?'s':''}`:'')):(b.label?b.market+pk:null),b.type==='Système'?'Système':null,showDate?fmtDate(b.date):null].filter(Boolean).join(' · ')||b.type;
   const right=b.status==='pending'
     ?`<div class="quick"><button class="q-w" data-act="quick" data-id="${b.id}" data-v="won" aria-label="Gagné">✓</button><button class="q-l" data-act="quick" data-id="${b.id}" data-v="lost" aria-label="Perdu">✗</button></div>`
     :'';
@@ -349,13 +394,31 @@ function betListHTML(){
   let bets=betsOf(br().id);
   if(ui.filter==='won')bets=bets.filter(isWin);else if(ui.filter==='lost')bets=bets.filter(isLoss);else if(ui.filter==='pending')bets=bets.filter(b=>b.status==='pending');
   const q=ui.search.trim().toLowerCase();
-  if(q)bets=bets.filter(b=>[b.label,b.sport,b.market,b.type,...(b.legs||[]).map(l=>l.label+' '+l.market)].join(' ').toLowerCase().includes(q));
+  if(q)bets=bets.filter(b=>[b.label,b.sport,b.market,b.type,b.pick,b.comp,...(b.legs||[]).map(l=>[l.label,l.market,l.pick,l.comp].join(' '))].join(' ').toLowerCase().includes(q));
   if(!bets.length)return `<div class="card"><div class="empty">Aucun pari ici.</div></div>`;
   const by={};sortChrono(bets).reverse().forEach(b=>(by[b.date]=by[b.date]||[]).push(b));
   return Object.keys(by).map(d=>{const pl=by[d].reduce((s,b)=>s+profit(b),0);
     return `<div class="day-h"><span>${fmtDate(d)}</span><span class="num ${cls(pl)}">${seur(pl)}</span></div><div class="card" style="padding:0 16px">${by[d].map(b=>betRow(b,false)).join('')}</div>`}).join('');
 }
 
+function selSection(dec){
+  const sels=selections(dec),w=sels.filter(x=>x.win).length;
+  const combos=dec.filter(x=>x.type==='Combiné');
+  const lostLegs={};combos.forEach(b=>(b.legs||[]).forEach(l=>{if(b.status==='lost'&&l.lost){const k=l.market+(l.pick?' · '+l.pick:'');lostLegs[k]=(lostLegs[k]||0)+1}}));
+  const ll=Object.entries(lostLegs).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  return `<div class="sec-t">🎯 Tes sélections <span class="mu" style="font-size:12px;font-weight:500">(simples + chaque sélection des combinés)</span></div>
+  <div class="grid3" style="margin-bottom:12px">
+    <div class="kpi"><small>Sélections</small><b class="num">${sels.length}</b></div>
+    <div class="kpi"><small>Réussite</small><b class="num">${pct(sels.length?w/sels.length*100:0)}</b></div>
+    <div class="kpi"><small>Dans combinés</small><b class="num">${sels.filter(x=>x.combo).length}</b></div>
+  </div>
+  <div class="card"><h3>Réussite par type de pari</h3>${rateBars(sels,x=>x.market)}</div>
+  <div class="card"><h3>Réussite par choix</h3>${rateBars(sels,x=>x.pick?x.market+' · '+x.pick:null,12)}</div>
+  <div class="card"><h3>Réussite par pays / compétition</h3>${rateBars(sels,x=>x.comp,10)}</div>
+  ${combos.length?`<div class="sec-t">🔗 Tes combinés</div>
+  <div class="card"><h3>Par nombre de sélections</h3>${breakdown(combos,x=>{const n=(x.legs||[]).length;return n?(n>=5?'5 sélections et +':n+' sélections'):'Non détaillé'})}</div>
+  <div class="card"><h3>Ce qui fait tomber tes combinés</h3>${countBars(ll,'var(--r)')}</div>`:''}`;
+}
 function viewStats(){
   const b=br();
   let bets=ui.scope==='all'?S.bets:betsOf(b.id);
@@ -397,13 +460,34 @@ function viewStats(){
   <div class="grid2" style="grid-template-columns:1fr;gap:0">
   <div class="card"><h3>Répartition</h3><div class="row" style="gap:20px">${donut([{v:st.won,c:'var(--g)',l:'Gagnés'},{v:st.lost,c:'var(--r)',l:'Perdus'},{v:st.voids,c:'var(--b)',l:'Remboursés'}])}</div></div>
   </div>
+  <div class="sec-t">💶 Tes paris</div>
+  <div class="card"><h3>Simple / Combiné / Système</h3>${breakdown(dec,x=>x.type)}</div>
   <div class="card"><h3>Par sport</h3>${breakdown(dec,x=>x.sport)}</div>
-  <div class="card"><h3>Par type de pari</h3>${breakdown(dec,x=>x.market)}</div>
   <div class="card"><h3>Par tranche de cote</h3>${breakdown(dec,x=>(ODDS_RANGES.find(r=>x.odds>=r[0]&&x.odds<r[1])||ODDS_RANGES[4])[2],ODDS_RANGES.map(r=>r[2]))}</div>
-  <div class="card"><h3>Simple / Combiné</h3>${breakdown(dec,x=>x.type)}</div>
+  ${selSection(dec)}
   ${ui.scope==='all'?`<div class="card"><h3>Par bookmaker</h3>${breakdown(dec,x=>(S.bankrolls.find(r=>r.id===x.brId)||{}).bookmaker||'?')}</div>`:''}`;
 }
 
+function selections(bets){
+  const out=[];
+  bets.forEach(b=>{if(b.status==='pending'||b.status==='void')return;const w=isWin(b);
+    if(b.type==='Combiné'&&b.legs&&b.legs.length){if(!w&&!b.legs.some(l=>l.lost))return;
+      b.legs.forEach(l=>out.push({market:l.market,pick:l.pick,comp:l.comp,sport:b.sport,odds:l.odds,win:w||!l.lost,combo:true}))}
+    else out.push({market:b.market,pick:b.pick,comp:b.comp,sport:b.sport,odds:b.odds,win:w,combo:false})});
+  return out;
+}
+function rateBars(items,keyFn,limit){
+  const m={};items.forEach(it=>{const k=keyFn(it);if(!k)return;const o=m[k]=m[k]||{n:0,w:0};o.n++;if(it.win)o.w++});
+  const keys=Object.keys(m).sort((a,b)=>m[b].n-m[a].n||m[b].w/m[b].n-m[a].w/m[a].n).slice(0,limit||99);
+  if(!keys.length)return '<div class="empty">Pas encore de données. Renseigne le type, ton choix et la compétition dans tes paris.</div>';
+  return keys.map(k=>{const o=m[k],r=o.w/o.n*100,col=r>=60?'var(--g)':r>=45?'var(--a)':'var(--r)';
+    return `<div class="rb"><div class="rb-top"><span>${esc(k)}</span><span class="num"><b>${Math.round(r)} %</b> <span class="mu">${o.w}/${o.n}</span></span></div><div class="rb-bar"><i style="width:${Math.max(r,2)}%;background:${col}"></i></div></div>`}).join('');
+}
+function countBars(rows,color){
+  if(!rows.length)return '<div class="empty">Rien à afficher pour l\'instant.</div>';
+  const max=Math.max(...rows.map(r=>r[1]));
+  return rows.map(([k,n])=>`<div class="rb"><div class="rb-top"><span>${esc(k)}</span><span class="num"><b>${n}</b></span></div><div class="rb-bar"><i style="width:${n/max*100}%;background:${color}"></i></div></div>`).join('');
+}
 function breakdown(bets,keyFn,order){
   if(!bets.length)return '<div class="empty">Pas de données sur la période.</div>';
   const m={};bets.forEach(b=>{const k=keyFn(b);const o=m[k]=m[k]||{n:0,w:0,l:0,p:0,s:0};o.n++;if(isWin(b))o.w++;else o.l++;o.p+=profit(b);o.s+=b.stake});
@@ -511,16 +595,43 @@ function marketOptions(sel){
   const extra=sel&&!S.markets.includes(sel)&&sel!=='Combiné'?`<option selected>${esc(sel)}</option>`:'';
   return S.markets.map(m=>`<option ${m===sel?'selected':''}>${esc(m)}</option>`).join('')+extra+'<option value="__add">＋ Ajouter mon propre type…</option>';
 }
+function pickBox(market,val,attr){
+  const c=PICKS[market];val=val||'';
+  if(!c||c.f)return `<div class="pick"><input class="inp pick-val" ${attr} value="${esc(val)}" placeholder="${c?c.f:'Ton choix / détail (optionnel)'}"></div>`;
+  if(c.o)return `<div class="pick"><input type="hidden" class="pick-val" ${attr} value="${esc(val)}"><div class="chips">${c.o.map(o=>`<button type="button" class="chip ${o===val?'on':''}" data-act="pick" data-v="${o}">${o}</button>`).join('')}</div></div>`;
+  const [sd,ln]=val.split(' ');
+  return `<div class="pick"><input type="hidden" class="pick-val" ${attr} value="${esc(val)}">
+    <div class="chips" style="margin-bottom:6px">${c.side.map(o=>`<button type="button" class="chip ${o===sd?'on':''}" data-act="pick" data-part="side" data-v="${o}">${o}</button>`).join('')}</div>
+    <div class="chips scroll">${c.lines.map(o=>`<button type="button" class="chip ${o===ln?'on':''}" data-act="pick" data-part="line" data-v="${o}">${o}</button>`).join('')}</div></div>`;
+}
+function acHTML(attr,val){return `<div class="ac"><input class="inp" ${attr} data-ac value="${esc(val||'')}" placeholder="Pays / compétition (tape pour chercher)" autocomplete="off" autocorrect="off" spellcheck="false"><div class="ac-list"></div></div>`}
+function compList(){
+  const used={};const add=c=>{if(c)used[c]=(used[c]||0)+1};
+  S.bets.forEach(b=>{add(b.comp);(b.legs||[]).forEach(l=>add(l.comp))});
+  return [...new Set([...Object.keys(used).sort((a,b)=>used[b]-used[a]),...COMPS])];
+}
+function showAc(inp){
+  const list=inp.parentElement.querySelector('.ac-list'),q=norm(inp.value.trim());
+  let items=compList();
+  if(q){const st=items.filter(x=>norm(x).startsWith(q)||norm(x).includes(' '+q)||norm(x).includes('– '+q));const rest=items.filter(x=>!st.includes(x)&&norm(x).includes(q));items=[...st,...rest]}
+  items=items.slice(0,8);
+  const hl=x=>{if(!q)return esc(x);const i=norm(x).indexOf(q);return i<0?esc(x):esc(x.slice(0,i))+'<b>'+esc(x.slice(i,i+q.length))+'</b>'+esc(x.slice(i+q.length))};
+  list.innerHTML=items.map(x=>`<button type="button" data-act="acPick" data-v="${esc(x)}">${hl(x)}</button>`).join('');
+  list.style.display=items.length?'block':'none';
+}
 function legRow(l,i){
-  l=l||{label:'',market:S.markets[0],odds:''};
-  return `<div class="leg"><div class="leg-n">Sélection ${i+1}</div><input class="inp" data-leg="label" placeholder="Match / pronostic (ex : PSG gagne)" value="${esc(l.label)}">
-    <div class="leg-row"><select class="inp" data-leg="market">${marketOptions(l.market)}</select><input class="inp num" data-leg="odds" inputmode="decimal" placeholder="Cote" value="${l.odds||''}"><button type="button" class="del" data-act="delLeg" aria-label="Retirer">✕</button></div></div>`;
+  l=l||{label:'',market:S.markets[0],odds:'',pick:'',comp:''};
+  return `<div class="leg ${l.lost?'is-lost':''}"><div class="leg-h"><span class="leg-n">Sélection ${i+1}</span><button type="button" class="leg-lost" data-act="legLost">✗ Perdue</button></div>
+    <input class="inp" data-leg="label" placeholder="Match (ex : PSG – OM)" value="${esc(l.label)}">
+    <div class="leg-row"><select class="inp" data-leg="market">${marketOptions(l.market)}</select><input class="inp num" data-leg="odds" inputmode="decimal" placeholder="Cote" value="${l.odds||''}"><button type="button" class="del" data-act="delLeg" aria-label="Retirer">✕</button></div>
+    <div class="pick-wrap">${pickBox(l.market,l.pick,'data-leg="pick"')}</div>
+    ${acHTML('data-leg="comp"',l.comp)}</div>`;
 }
 function renumberLegs(){document.querySelectorAll('#legs .leg-n').forEach((n,i)=>n.textContent='Sélection '+(i+1))}
 function betForm(b){
   const last=sortChrono(betsOf(br().id)).pop();
   const MT=isMt(br())?montante(br()):null;
-  b=b||{stake:MT?Math.round(MT.current.amount*100)/100:(last?last.stake:10),odds:MT&&MT.mt.odds>0?MT.mt.odds:'',sport:last?last.sport:S.sports[0],market:last&&last.market!=='Combiné'?last.market:S.markets[0],type:'Simple',label:'',date:todayStr(),status:'pending'};
+  b=b||{stake:MT?Math.round(MT.current.amount*100)/100:(last?last.stake:10),odds:MT&&MT.mt.odds>0?MT.mt.odds:'',sport:last?last.sport:S.sports[0],market:last&&last.market!=='Combiné'?last.market:S.markets[0],type:'Simple',label:'',date:todayStr(),status:'pending',pick:'',comp:''};
   const radios=(name,list,val)=>list.map(v=>`<label class="chip"><input type="radio" name="${name}" value="${esc(v)}" ${v===val?'checked':''}><span>${esc(v)}</span></label>`).join('');
   const legs=b.legs&&b.legs.length?b.legs:[null,null];
   openSheet(b.id?'Modifier le pari':'Nouveau pari',`
@@ -531,15 +642,20 @@ function betForm(b){
       <label class="field"><span id="oddsLbl">Cote</span><input class="inp lg num" name="odds" inputmode="decimal" value="${b.odds}" placeholder="1.85" required></label>
     </div>
     <div class="chips scroll" style="margin:-4px 0 14px">${[2,5,10,20,50].map(v=>`<button type="button" class="chip" data-act="stakeChip" data-v="${v}">${v} €</button>`).join('')}<button type="button" class="chip" data-act="stakeChip" data-v="pct2">2 % BR</button><button type="button" class="chip" data-act="stakeChip" data-v="pct5">5 % BR</button></div>
+    <div class="field"><span>Sport</span><div class="chips scroll" id="sportChips">${radios('sport',S.sports.includes(b.sport)?S.sports:[...S.sports,b.sport],b.sport)}<button type="button" class="chip" data-act="addSportInline">＋ Ajouter</button></div></div>
     <div class="field" id="legsBox" style="display:none"><span>Sélections du combiné — la cote totale se calcule seule</span>
       <div id="legs">${legs.map(legRow).join('')}</div>
       <button type="button" class="btn sec" data-act="addLeg">+ Ajouter une sélection</button></div>
-    <label class="field" id="mkField"><span>Type de pari</span><select class="inp" name="market">${marketOptions(b.market)}</select></label>
+    <div id="mkField">
+      <label class="field"><span>Type de pari</span><select class="inp" name="market">${marketOptions(b.market)}</select></label>
+      <div class="field"><span>Ton choix</span><div id="pickMain">${pickBox(b.market,b.pick,'name="pick"')}</div></div>
+      <div class="field"><span>Pays / compétition</span>${acHTML('name="comp"',b.comp)}</div>
+    </div>
     <div class="pot" id="pot"></div>
     <div class="field"><span>Résultat</span><div class="seg status">${Object.entries(STATUS).map(([k,l])=>`<label><input type="radio" name="status" value="${k}" ${k===b.status?'checked':''}><span>${l}</span></label>`).join('')}</div></div>
+    <div class="msg ko" id="lostHint" style="display:none;margin:-4px 0 14px">Touche « ✗ Perdue » sur la ou les sélections qui ont fait tomber le combiné (plus haut).</div>
     <label class="field" id="coField" style="display:${b.status==='cashout'?'block':'none'}"><span>Montant encaissé (cash-out) €</span><input class="inp num" name="cashout" inputmode="decimal" value="${b.cashout??''}"></label>
-    <div class="field"><span>Sport</span><div class="chips scroll" id="sportChips">${radios('sport',S.sports.includes(b.sport)?S.sports:[...S.sports,b.sport],b.sport)}<button type="button" class="chip" data-act="addSportInline">＋ Ajouter</button></div></div>
-    <label class="field"><span>Match / description (optionnel)</span><input class="inp" name="label" value="${esc(b.label)}" placeholder="Ex : PSG – OM, PSG gagne"></label>
+    <label class="field"><span>Match / description (optionnel)</span><input class="inp" name="label" value="${esc(b.label)}" placeholder="Ex : PSG – OM"></label>
     <label class="field"><span>Date</span><input class="inp" type="date" name="date" value="${b.date}"></label>
     <button class="btn" type="submit">${b.id?'Enregistrer':'Ajouter le pari'}</button>
     ${b.id?`<button type="button" class="btn dng" style="margin-top:10px" data-act="delBet" data-id="${b.id}">Supprimer</button>`:''}
@@ -555,6 +671,8 @@ function updatePot(){
   if(os.length){oi.value=String(Math.round(os.reduce((a,c)=>a*c,1)*100)/100);oi.readOnly=true;$('#oddsLbl').textContent='Cote totale'}
   else{oi.readOnly=false;$('#oddsLbl').textContent='Cote'}
   const d=new FormData(f),s=num(d.get('stake')),o=num(d.get('odds')),st=d.get('status');
+  f.dataset.st=st;f.dataset.combo=combo?'1':'0';
+  $('#lostHint').style.display=combo&&st==='lost'?'block':'none';
   $('#coField').style.display=st==='cashout'?'block':'none';
   let h;
   if(st==='won')h=`Gain net <b class="num">${seur(s*(o-1))}</b>`;
@@ -573,8 +691,9 @@ function saveBet(f){
   if(status==='cashout'&&d.get('cashout')==='')return toast('Indique le montant du cash-out');
   const before=dayPL(betsOf(br().id),todayStr());
   const type=d.get('type')||'Simple';let market=d.get('market'),legs=null;
-  if(type==='Combiné'){market='Combiné';legs=[...f.querySelectorAll('.leg')].map(r=>({label:r.querySelector('[data-leg=label]').value.trim(),market:r.querySelector('[data-leg=market]').value,odds:num(r.querySelector('[data-leg=odds]').value)})).filter(l=>l.label||l.odds)}
-  const data={stake,odds,status,sport:d.get('sport')||'Autre',market,type,legs,label:(d.get('label')||'').trim(),date:d.get('date')||todayStr(),cashout:status==='cashout'?num(d.get('cashout')):null};
+  let pick=(d.get('pick')||'').trim(),comp=(d.get('comp')||'').trim();
+  if(type==='Combiné'){market='Combiné';pick='';comp='';legs=[...f.querySelectorAll('.leg')].map(r=>({label:r.querySelector('[data-leg=label]').value.trim(),market:r.querySelector('[data-leg=market]').value,odds:num(r.querySelector('[data-leg=odds]').value),pick:(r.querySelector('[data-leg=pick]').value||'').trim(),comp:r.querySelector('[data-leg=comp]').value.trim(),lost:status==='lost'&&r.classList.contains('is-lost')})).filter(l=>l.label||l.odds||l.pick)}
+  const data={stake,odds,status,sport:d.get('sport')||'Autre',market,type,legs,pick,comp,label:(d.get('label')||'').trim(),date:d.get('date')||todayStr(),cashout:status==='cashout'?num(d.get('cashout')):null};
   if(id)Object.assign(S.bets.find(b=>b.id===id),data);
   else S.bets.push({id:uid(),brId:br().id,createdAt:Date.now(),...data});
   save();closeSheet();render();afterSettle(before,id?'Pari modifié':'Pari ajouté');
@@ -595,13 +714,16 @@ let toastT;
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),2200)}
 
 document.addEventListener('click',e=>{
+  document.querySelectorAll('.ac-list').forEach(l=>{if(!l.parentElement.contains(e.target))l.style.display='none'});
   const el=e.target.closest('[data-act]');if(!el)return;
   const a=el.dataset.act,id=el.dataset.id,v=el.dataset.v;
   switch(a){
     case 'tab':ui.tab=el.dataset.tab;closeSheet();render();scrollTo(0,0);break;
     case 'newBet':betForm();break;
     case 'editBet':betForm(S.bets.find(b=>b.id===id));break;
-    case 'quick':{e.stopPropagation();const before=dayPL(betsOf(br().id),todayStr());S.bets.find(b=>b.id===id).status=v;save();render();afterSettle(before,v==='won'?'✓ Gagné':'✗ Perdu');break}
+    case 'quick':{e.stopPropagation();const qb=S.bets.find(b=>b.id===id);
+      if(v==='lost'&&qb.type==='Combiné'&&qb.legs&&qb.legs.length>1){betForm({...qb,status:'lost'});toast('Indique la ou les sélections perdues');break}
+      const before=dayPL(betsOf(br().id),todayStr());S.bets.find(b=>b.id===id).status=v;save();render();afterSettle(before,v==='won'?'✓ Gagné':'✗ Perdu');break}
     case 'close':closeSheet();break;
     case 'brPicker':brPicker();break;
     case 'pickBr':S.activeId=id;save();closeSheet();render();toast('Bankroll : '+br().name);break;
@@ -620,11 +742,21 @@ document.addEventListener('click',e=>{
       let inp=[...document.querySelectorAll('#sportChips input')].find(i=>i.value===v);
       if(!inp){el.insertAdjacentHTML('beforebegin',`<label class="chip"><input type="radio" name="sport" value="${esc(v)}"><span>${esc(v)}</span></label>`);inp=el.previousElementSibling.querySelector('input')}
       inp.checked=true;toast('Sport ajouté : '+v);break}
+    case 'pick':{const box=el.closest('.pick'),h=box.querySelector('.pick-val');
+      if(el.dataset.part){el.parentElement.querySelectorAll('.chip').forEach(c=>c.classList.toggle('on',c===el));
+        const sd=box.querySelector('[data-part=side].on'),ln=box.querySelector('[data-part=line].on');h.value=[sd&&sd.dataset.v,ln&&ln.dataset.v].filter(Boolean).join(' ')}
+      else{const on=!el.classList.contains('on');box.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));if(on)el.classList.add('on');h.value=on?el.dataset.v:''}
+      break}
+    case 'acPick':{const inp=el.closest('.ac').querySelector('input');inp.value=v;el.parentElement.style.display='none';break}
+    case 'legLost':el.closest('.leg').classList.toggle('is-lost');break;
     case 'addLeg':{const box=$('#legs');box.insertAdjacentHTML('beforeend',legRow(null,box.children.length));box.lastElementChild.querySelector('input').focus();break}
     case 'delLeg':{el.closest('.leg').remove();renumberLegs();updatePot();break}
     case 'delMarket':if(S.markets.length<=1)return;S.markets=S.markets.filter(k=>k!==v);save();render();break;
     case 'delSport':if(S.sports.length<=1)return;S.sports=S.sports.filter(k=>k!==v);save();render();break;
-    case 'export':{const blob=new Blob([JSON.stringify(S,null,1)],{type:'application/json'});const u=URL.createObjectURL(blob);const l=document.createElement('a');l.href=u;l.download=`gcbkroll-${todayStr()}.json`;document.body.appendChild(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(u),1000);toast('Sauvegarde téléchargée');break}
+    case 'export':{const name=`gcbkroll-${todayStr()}.json`,txt=JSON.stringify(S,null,1);
+      try{const file=new File([txt],name,{type:'application/json'});
+        if(navigator.canShare&&navigator.canShare({files:[file]})){navigator.share({files:[file],title:'Sauvegarde GCBkroll'}).catch(()=>{});break}}catch(err){}
+      const blob=new Blob([txt],{type:'application/json'});const u=URL.createObjectURL(blob);const l=document.createElement('a');l.href=u;l.download=name;document.body.appendChild(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(u),1000);toast('Sauvegarde téléchargée');break}
     case 'import':$('#importFile').click();break;
     case 'reset':if(confirm('Effacer TOUTES les bankrolls et tous les paris ?')&&confirm('Vraiment ? Cette action est définitive.')){S=defaultState();save();render();toast('Données effacées')}break;
   }
@@ -637,7 +769,9 @@ document.addEventListener('submit',e=>{
   else if(f.id==='brNew'){const b={id:uid(),createdAt:Date.now(),...readBr(f)};S.bankrolls.push(b);S.activeId=b.id;save();closeSheet();render();toast('Bankroll créée')}
   else if(['addBook','addSport','addMarket'].includes(f.id)){const v=new FormData(f).get('v').trim();const arr=f.id==='addBook'?S.books:f.id==='addSport'?S.sports:S.markets;if(v&&!arr.includes(v)){arr.push(v);save();render()}}
 });
+document.addEventListener('focusin',e=>{if(e.target.dataset&&e.target.dataset.ac!==undefined)showAc(e.target)});
 document.addEventListener('input',e=>{
+  if(e.target.dataset&&e.target.dataset.ac!==undefined)showAc(e.target);
   if(e.target.id==='search'){ui.search=e.target.value;$('#betList').innerHTML=betListHTML()}
   if(e.target.closest('#betForm'))updatePot();
 });
@@ -648,6 +782,8 @@ document.addEventListener('change',e=>{
     if(v&&!S.markets.includes(v)){S.markets.push(v);save();toast('Type ajouté : '+v)}
     document.querySelectorAll('#betForm select[name=market],#betForm select[data-leg=market]').forEach(sel=>{const cur=sel===t?(v||S.markets[0]):sel.value;sel.innerHTML=marketOptions(cur)});
   }
+  if(t.name==='market'&&t.closest('#betForm'))$('#pickMain').innerHTML=pickBox(t.value,'','name="pick"');
+  if(t.dataset&&t.dataset.leg==='market')t.closest('.leg').querySelector('.pick-wrap').innerHTML=pickBox(t.value,'','data-leg="pick"');
   if(t.name==='mode'){const f=t.form,m=t.value==='montante';f.querySelectorAll('.mt-only').forEach(x=>x.style.display=m?'block':'none');f.querySelectorAll('.cl-only').forEach(x=>x.style.display=m?'none':'block')}
   if(t.closest('#betForm'))updatePot();
 });

@@ -117,6 +117,11 @@ svg text{fill:var(--mu);font-size:10px;font-family:inherit}
 .del{color:var(--mu);font-size:18px;padding:4px 8px}
 .toolbar{display:flex;gap:8px;margin-bottom:12px;align-items:center}
 .search{flex:1}
+.leg{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:8px}
+.leg .inp{background:var(--card)}
+.leg-row{display:grid;grid-template-columns:1fr 84px auto;gap:8px;margin-top:8px;align-items:center}
+.leg-n{font-size:11px;color:var(--mu);font-weight:700;margin-bottom:6px}
+.inp[readonly]{color:var(--g)}
 .note{font-size:12px;color:var(--mu);line-height:1.5}
 @media(min-width:900px){.grid3.k6{grid-template-columns:repeat(6,1fr)}}
 </style>
@@ -167,11 +172,11 @@ const pct=n=>(isFinite(n)?(Math.round(n*10)/10).toLocaleString('fr-FR'):'0')+' %
 
 function defaultState(){
   const id=uid();
-  return {version:1,activeId:id,books:[...DEF_BOOKS],sports:[...DEF_SPORTS],
+  return {version:1,activeId:id,books:[...DEF_BOOKS],sports:[...DEF_SPORTS],markets:[...MARKETS],
     bankrolls:[{id,name:'Principale',bookmaker:'Yonibet',start:100,goal:50,stopLoss:50,createdAt:Date.now()}],bets:[]};
 }
 function load(){
-  try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&Array.isArray(s.bankrolls)&&s.bankrolls.length)return s}catch(e){}
+  try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&Array.isArray(s.bankrolls)&&s.bankrolls.length){if(!Array.isArray(s.markets))s.markets=[...MARKETS];return s}}catch(e){}
   return defaultState();
 }
 let S=load();
@@ -213,8 +218,9 @@ function render(){
 
 function betRow(b,showDate){
   const p=profit(b);
-  const title=b.label||`${b.sport} · ${b.market}`;
-  const sub=[b.label?b.sport:null,b.label?b.market:null,b.type!=='Simple'?b.type:null,showDate?fmtDate(b.date):null].filter(Boolean).join(' · ')||b.type;
+  const legsN=b.legs&&b.legs.length?b.legs.length:0;
+  const title=b.label||(legsN?b.legs.map(l=>l.label||l.market).join(' + '):`${b.sport} · ${b.market}`);
+  const sub=[(b.label||legsN)?b.sport:null,b.type==='Combiné'?('Combiné'+(legsN?` ${legsN} sél.`:'')):(b.label?b.market:null),b.type==='Système'?'Système':null,showDate?fmtDate(b.date):null].filter(Boolean).join(' · ')||b.type;
   const right=b.status==='pending'
     ?`<div class="quick"><button class="q-w" data-act="quick" data-id="${b.id}" data-v="won" aria-label="Gagné">✓</button><button class="q-l" data-act="quick" data-id="${b.id}" data-v="lost" aria-label="Perdu">✗</button></div>`
     :'';
@@ -270,7 +276,7 @@ function betListHTML(){
   let bets=betsOf(br().id);
   if(ui.filter==='won')bets=bets.filter(isWin);else if(ui.filter==='lost')bets=bets.filter(isLoss);else if(ui.filter==='pending')bets=bets.filter(b=>b.status==='pending');
   const q=ui.search.trim().toLowerCase();
-  if(q)bets=bets.filter(b=>[b.label,b.sport,b.market,b.type].join(' ').toLowerCase().includes(q));
+  if(q)bets=bets.filter(b=>[b.label,b.sport,b.market,b.type,...(b.legs||[]).map(l=>l.label+' '+l.market)].join(' ').toLowerCase().includes(q));
   if(!bets.length)return `<div class="card"><div class="empty">Aucun pari ici.</div></div>`;
   const by={};sortChrono(bets).reverse().forEach(b=>(by[b.date]=by[b.date]||[]).push(b));
   return Object.keys(by).map(d=>{const pl=by[d].reduce((s,b)=>s+profit(b),0);
@@ -391,6 +397,9 @@ function viewSettings(){
   <div class="card"><h3>Sports</h3>
     <div class="chips" style="margin-bottom:10px">${S.sports.map(k=>`<span class="chip">${esc(k)} <button class="mu" data-act="delSport" data-v="${esc(k)}">×</button></span>`).join('')}</div>
     <form id="addSport" class="row"><input class="inp" name="v" placeholder="Ajouter un sport"><button class="btn sm" type="submit">Ajouter</button></form></div>
+  <div class="card"><h3>Types de paris</h3>
+    <div class="chips" style="margin-bottom:10px">${S.markets.map(k=>`<span class="chip">${esc(k)} <button class="mu" data-act="delMarket" data-v="${esc(k)}">×</button></span>`).join('')}</div>
+    <form id="addMarket" class="row"><input class="inp" name="v" placeholder="Ex : Corners, Cartons, Tir cadré…"><button class="btn sm" type="submit">Ajouter</button></form></div>
   <div class="card"><h3>Données</h3>
     <p class="note" style="margin-bottom:12px">Tout est enregistré uniquement dans ce navigateur, sur cet appareil. Fais une sauvegarde régulièrement, et utilise-la pour transférer tes données entre ton téléphone et ton PC.</p>
     <div class="grid2"><button class="btn sec" data-act="export">⬇ Sauvegarder</button><button class="btn sec" data-act="import">⬆ Restaurer</button></div>
@@ -416,23 +425,37 @@ function openSheet(title,html){
 }
 function closeSheet(){$('#sheet').classList.add('hidden');document.body.style.overflow=''}
 
+function marketOptions(sel){
+  const extra=sel&&!S.markets.includes(sel)&&sel!=='Combiné'?`<option selected>${esc(sel)}</option>`:'';
+  return S.markets.map(m=>`<option ${m===sel?'selected':''}>${esc(m)}</option>`).join('')+extra+'<option value="__add">＋ Ajouter un type…</option>';
+}
+function legRow(l,i){
+  l=l||{label:'',market:S.markets[0],odds:''};
+  return `<div class="leg"><div class="leg-n">Sélection ${i+1}</div><input class="inp" data-leg="label" placeholder="Match / pronostic (ex : PSG gagne)" value="${esc(l.label)}">
+    <div class="leg-row"><select class="inp" data-leg="market">${marketOptions(l.market)}</select><input class="inp num" data-leg="odds" inputmode="decimal" placeholder="Cote" value="${l.odds||''}"><button type="button" class="del" data-act="delLeg" aria-label="Retirer">✕</button></div></div>`;
+}
+function renumberLegs(){document.querySelectorAll('#legs .leg-n').forEach((n,i)=>n.textContent='Sélection '+(i+1))}
 function betForm(b){
   const last=sortChrono(betsOf(br().id)).pop();
-  b=b||{stake:last?last.stake:10,odds:'',sport:last?last.sport:S.sports[0],market:last?last.market:MARKETS[0],type:'Simple',label:'',date:todayStr(),status:'pending'};
+  b=b||{stake:last?last.stake:10,odds:'',sport:last?last.sport:S.sports[0],market:last&&last.market!=='Combiné'?last.market:S.markets[0],type:'Simple',label:'',date:todayStr(),status:'pending'};
   const radios=(name,list,val)=>list.map(v=>`<label class="chip"><input type="radio" name="${name}" value="${esc(v)}" ${v===val?'checked':''}><span>${esc(v)}</span></label>`).join('');
+  const legs=b.legs&&b.legs.length?b.legs:[null,null];
   openSheet(b.id?'Modifier le pari':'Nouveau pari',`
   <form id="betForm" data-id="${b.id||''}" autocomplete="off">
+    <div class="field"><div class="seg">${TYPES.map(k=>`<label><input type="radio" name="type" value="${k}" ${k===b.type?'checked':''}><span>${k}</span></label>`).join('')}</div></div>
     <div class="grid2">
       <label class="field"><span>Mise €</span><input class="inp lg num" name="stake" inputmode="decimal" value="${b.stake}" required></label>
-      <label class="field"><span>Cote</span><input class="inp lg num" name="odds" inputmode="decimal" value="${b.odds}" placeholder="1.85" required ${b.id?'':'autofocus'}></label>
+      <label class="field"><span id="oddsLbl">Cote</span><input class="inp lg num" name="odds" inputmode="decimal" value="${b.odds}" placeholder="1.85" required></label>
     </div>
     <div class="chips scroll" style="margin:-4px 0 14px">${[2,5,10,20,50].map(v=>`<button type="button" class="chip" data-act="stakeChip" data-v="${v}">${v} €</button>`).join('')}<button type="button" class="chip" data-act="stakeChip" data-v="pct2">2 % BR</button><button type="button" class="chip" data-act="stakeChip" data-v="pct5">5 % BR</button></div>
+    <div class="field" id="legsBox" style="display:none"><span>Sélections du combiné — la cote totale se calcule seule</span>
+      <div id="legs">${legs.map(legRow).join('')}</div>
+      <button type="button" class="btn sec" data-act="addLeg">+ Ajouter une sélection</button></div>
+    <label class="field" id="mkField"><span>Type de pari</span><select class="inp" name="market">${marketOptions(b.market)}</select></label>
     <div class="pot" id="pot"></div>
     <div class="field"><span>Résultat</span><div class="seg status">${Object.entries(STATUS).map(([k,l])=>`<label><input type="radio" name="status" value="${k}" ${k===b.status?'checked':''}><span>${l}</span></label>`).join('')}</div></div>
     <label class="field" id="coField" style="display:${b.status==='cashout'?'block':'none'}"><span>Montant encaissé (cash-out) €</span><input class="inp num" name="cashout" inputmode="decimal" value="${b.cashout??''}"></label>
     <div class="field"><span>Sport</span><div class="chips scroll">${radios('sport',S.sports,b.sport)}</div></div>
-    <label class="field"><span>Type de pari</span><select class="inp" name="market">${MARKETS.map(m=>`<option ${m===b.market?'selected':''}>${m}</option>`).join('')}</select></label>
-    <div class="field"><span>Format</span><div class="seg">${TYPES.map(k=>`<label><input type="radio" name="type" value="${k}" ${k===b.type?'checked':''}><span>${k}</span></label>`).join('')}</div></div>
     <label class="field"><span>Match / description (optionnel)</span><input class="inp" name="label" value="${esc(b.label)}" placeholder="Ex : PSG – OM, PSG gagne"></label>
     <label class="field"><span>Date</span><input class="inp" type="date" name="date" value="${b.date}"></label>
     <button class="btn" type="submit">${b.id?'Enregistrer':'Ajouter le pari'}</button>
@@ -442,6 +465,12 @@ function betForm(b){
 }
 function updatePot(){
   const f=$('#betForm');if(!f)return;
+  const combo=new FormData(f).get('type')==='Combiné';
+  $('#legsBox').style.display=combo?'block':'none';$('#mkField').style.display=combo?'none':'block';
+  const oi=f.querySelector('[name=odds]');
+  const os=combo?[...f.querySelectorAll('[data-leg=odds]')].map(i=>num(i.value)).filter(x=>x>=1.01):[];
+  if(os.length){oi.value=String(Math.round(os.reduce((a,c)=>a*c,1)*100)/100);oi.readOnly=true;$('#oddsLbl').textContent='Cote totale'}
+  else{oi.readOnly=false;$('#oddsLbl').textContent='Cote'}
   const d=new FormData(f),s=num(d.get('stake')),o=num(d.get('odds')),st=d.get('status');
   $('#coField').style.display=st==='cashout'?'block':'none';
   let h;
@@ -460,7 +489,9 @@ function saveBet(f){
   const status=d.get('status');
   if(status==='cashout'&&d.get('cashout')==='')return toast('Indique le montant du cash-out');
   const before=dayPL(betsOf(br().id),todayStr());
-  const data={stake,odds,status,sport:d.get('sport')||'Autre',market:d.get('market'),type:d.get('type')||'Simple',label:(d.get('label')||'').trim(),date:d.get('date')||todayStr(),cashout:status==='cashout'?num(d.get('cashout')):null};
+  const type=d.get('type')||'Simple';let market=d.get('market'),legs=null;
+  if(type==='Combiné'){market='Combiné';legs=[...f.querySelectorAll('.leg')].map(r=>({label:r.querySelector('[data-leg=label]').value.trim(),market:r.querySelector('[data-leg=market]').value,odds:num(r.querySelector('[data-leg=odds]').value)})).filter(l=>l.label||l.odds)}
+  const data={stake,odds,status,sport:d.get('sport')||'Autre',market,type,legs,label:(d.get('label')||'').trim(),date:d.get('date')||todayStr(),cashout:status==='cashout'?num(d.get('cashout')):null};
   if(id)Object.assign(S.bets.find(b=>b.id===id),data);
   else S.bets.push({id:uid(),brId:br().id,createdAt:Date.now(),...data});
   save();closeSheet();render();afterSettle(before,id?'Pari modifié':'Pari ajouté');
@@ -501,6 +532,9 @@ document.addEventListener('click',e=>{
     case 'stakeChip':{const inp=$('#betForm [name=stake]');
       if(v.startsWith('pct')){const b=br(),cur=b.start+stats(betsOf(b.id)).profit;inp.value=Math.max(0,Math.round(cur*(+v.slice(3))/100*100)/100)}else inp.value=v;updatePot();break}
     case 'delBook':if(S.books.length<=1)return;S.books=S.books.filter(k=>k!==v);save();render();break;
+    case 'addLeg':{const box=$('#legs');box.insertAdjacentHTML('beforeend',legRow(null,box.children.length));box.lastElementChild.querySelector('input').focus();break}
+    case 'delLeg':{el.closest('.leg').remove();renumberLegs();updatePot();break}
+    case 'delMarket':if(S.markets.length<=1)return;S.markets=S.markets.filter(k=>k!==v);save();render();break;
     case 'delSport':if(S.sports.length<=1)return;S.sports=S.sports.filter(k=>k!==v);save();render();break;
     case 'export':{const blob=new Blob([JSON.stringify(S,null,1)],{type:'application/json'});const u=URL.createObjectURL(blob);const l=document.createElement('a');l.href=u;l.download=`betbank-${todayStr()}.json`;document.body.appendChild(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(u),1000);toast('Sauvegarde téléchargée');break}
     case 'import':$('#importFile').click();break;
@@ -512,13 +546,21 @@ document.addEventListener('submit',e=>{
   if(f.id==='betForm')saveBet(f);
   else if(f.id==='brSettings'){Object.assign(br(),readBr(f));save();render();toast('Bankroll enregistrée')}
   else if(f.id==='brNew'){const b={id:uid(),createdAt:Date.now(),...readBr(f)};S.bankrolls.push(b);S.activeId=b.id;save();closeSheet();render();toast('Bankroll créée')}
-  else if(f.id==='addBook'||f.id==='addSport'){const v=new FormData(f).get('v').trim();const arr=f.id==='addBook'?S.books:S.sports;if(v&&!arr.includes(v)){arr.push(v);save();render()}}
+  else if(['addBook','addSport','addMarket'].includes(f.id)){const v=new FormData(f).get('v').trim();const arr=f.id==='addBook'?S.books:f.id==='addSport'?S.sports:S.markets;if(v&&!arr.includes(v)){arr.push(v);save();render()}}
 });
 document.addEventListener('input',e=>{
   if(e.target.id==='search'){ui.search=e.target.value;$('#betList').innerHTML=betListHTML()}
   if(e.target.closest('#betForm'))updatePot();
 });
-document.addEventListener('change',e=>{if(e.target.closest('#betForm'))updatePot()});
+document.addEventListener('change',e=>{
+  const t=e.target;
+  if(t.tagName==='SELECT'&&t.value==='__add'){
+    const v=(prompt('Nouveau type de pari (ex : Corners)')||'').trim();
+    if(v&&!S.markets.includes(v)){S.markets.push(v);save();toast('Type ajouté : '+v)}
+    document.querySelectorAll('#betForm select[name=market],#betForm select[data-leg=market]').forEach(sel=>{const cur=sel===t?(v||S.markets[0]):sel.value;sel.innerHTML=marketOptions(cur)});
+  }
+  if(t.closest('#betForm'))updatePot();
+});
 $('#importFile').addEventListener('change',e=>{
   const file=e.target.files[0];if(!file)return;
   const r=new FileReader();
